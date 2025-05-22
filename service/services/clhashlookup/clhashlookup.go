@@ -56,7 +56,7 @@ func (d *Hashlookup) Processing(partial bool, IcapHeader textproto.MIMEHeader) (
 		logging.Logger.Error(utils.PrepareLogMsg(d.xICAPMetadata, d.serviceName+" calculateFileHash error : "+err.Error()))
 	}
 	/////////////////////////////////
-	isProcess, _, _ := d.generalFunc.CheckTheExtension(fileExtension, d.extArrs,
+	isProcess, StatusCodeStr, _ := d.generalFunc.CheckTheExtension(fileExtension, d.extArrs,
 		d.processExts, d.rejectExts, d.bypassExts, d.return400IfFileExtRejected, d.isGzip(),
 		d.serviceName, d.methodName, d.FileHash, d.httpMsg.Request.RequestURI, reqContentType, bytes.NewBuffer(file), ExceptionPagePath, fmt.Sprint(fileSize))
 
@@ -78,7 +78,7 @@ func (d *Hashlookup) Processing(partial bool, IcapHeader textproto.MIMEHeader) (
 	if isMal {
 		return d.handleMaliciousFile(fileSize)
 	}
-	return d.handleSuccessfulScan(file, fileSize, reqContentType)
+	return d.handleSuccessfulScan(StatusCodeStr, file, fileSize, reqContentType)
 }
 
 func (d *Hashlookup) initProcessing(IcapHeader textproto.MIMEHeader) {
@@ -194,7 +194,7 @@ func (d *Hashlookup) handleMaliciousFile(fileSize int) (int, interface{}, map[st
 	}
 }
 
-func (d *Hashlookup) handleSuccessfulScan(scannedFile []byte, fileSize int, reqContentType ContentTypes.ContentType) (int, interface{}, map[string]string, map[string]interface{}, map[string]interface{}, map[string]interface{}) {
+func (d *Hashlookup) handleSuccessfulScan(StatusCodeStr int, scannedFile []byte, fileSize int, reqContentType ContentTypes.ContentType) (int, interface{}, map[string]string, map[string]interface{}, map[string]interface{}, map[string]interface{}) {
 	// Log headers and processing stop
 	d.generalFunc.LogHTTPMsgHeaders(d.methodName)
 	logging.Logger.Info(utils.PrepareLogMsg(d.xICAPMetadata, d.serviceName+" service has stopped processing"))
@@ -203,7 +203,12 @@ func (d *Hashlookup) handleSuccessfulScan(scannedFile []byte, fileSize int, reqC
 	// Process the scanned file
 	scannedFile = d.generalFunc.PreparingFileAfterScanning(scannedFile, reqContentType, d.methodName)
 
-	return utils.NoModificationStatusCodeStr, d.generalFunc.ReturningHttpMessageWithFile(d.methodName, scannedFile),
+	// The file was processed successfully with no changes
+	if StatusCodeStr == 0 {
+		StatusCodeStr = utils.NoModificationStatusCodeStr
+	}
+
+	return StatusCodeStr, d.generalFunc.ReturningHttpMessageWithFile(d.methodName, scannedFile),
 		d.serviceHeaders, d.msgHeadersBeforeProcessing, d.msgHeadersAfterProcessing, d.vendorMsgs
 }
 
@@ -267,7 +272,7 @@ func (d *Hashlookup) calculateFileHash(file []byte) (string, error) {
 func mapToString(m map[string]string) string {
 	var sb strings.Builder
 	for key, value := range m {
-		sb.WriteString(fmt.Sprintf("\r\n"))
+		sb.WriteString("\r\n")
 		sb.WriteString(fmt.Sprintf("%s: %s", key, value))
 	}
 	return sb.String()
