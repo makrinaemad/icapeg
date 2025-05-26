@@ -308,10 +308,14 @@ func (f *GeneralFunc) GetFileName(serviceName string, xICAPMetadata string) stri
 
 	} else {
 		logging.Logger.Info(utils.PrepareLogMsg(xICAPMetadata, serviceName+" file name  get form httpMsg return unnamed_file  : "+filename))
-
-		return "unnamed_file"
 	}
 
+	if filename == "" || filename == "/" || filename == "." || filename == ".." {
+		if f.httpMsg.Response.Header.Get("X-C-Icap-Client-Original-File") != "" {
+			filename = f.httpMsg.Response.Header.Get("X-C-Icap-Client-Original-File")
+			logging.Logger.Info(utils.PrepareLogMsg(xICAPMetadata, serviceName+" file name  get form X-C-Icap-Client-Original-File  : "+filename))
+		}
+	}
 	if len(filename) < 2 {
 		return "unnamed_file"
 	}
