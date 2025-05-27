@@ -51,7 +51,7 @@ func (h *Hashlocal) Processing(partial bool, IcapHeader textproto.MIMEHeader) (i
 		fileExtension = filepath.Ext(fileName)[1:]
 	} else {
 		// Determine the file extension using the header data
-		fileExtension = h.generalFunc.GetMimeExtension(filehead, contentType[0], fileName)
+		fileExtension = h.generalFunc.GetMimeExtension(filehead, contentType[0], fileName, file)
 	}
 	h.FileHash, err = h.calculateFileHash(file)
 	if err != nil {
@@ -137,6 +137,10 @@ func (h *Hashlocal) getFileNameAndContentType() (string, []string) {
 		fileName += utils.Unknown
 	}
 	logging.Logger.Info(utils.PrepareLogMsg(h.xICAPMetadata, h.serviceName+" file name : "+fileName))
+	if h.httpMsg.Response != nil {
+		logging.Logger.Info(utils.PrepareLogMsg(h.xICAPMetadata,
+			h.serviceName+" full response headers: "+fmt.Sprintf("%v", h.httpMsg.Response.Header)))
+	}
 	return fileName, contentType
 }
 

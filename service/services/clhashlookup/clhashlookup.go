@@ -49,12 +49,14 @@ func (d *Hashlookup) Processing(partial bool, IcapHeader textproto.MIMEHeader) (
 		fileExtension = filepath.Ext(fileName)[1:]
 	} else {
 		// Determine the file extension using the header data
-		fileExtension = d.generalFunc.GetMimeExtension(filehead, contentType[0], fileName)
+		fileExtension = d.generalFunc.GetMimeExtension(filehead, contentType[0], fileName, file)
 	}
+
 	d.FileHash, err = d.calculateFileHash(file)
 	if err != nil {
 		logging.Logger.Error(utils.PrepareLogMsg(d.xICAPMetadata, d.serviceName+" calculateFileHash error : "+err.Error()))
 	}
+
 	/////////////////////////////////
 	isProcess, StatusCodeStr, _ := d.generalFunc.CheckTheExtension(fileExtension, d.extArrs,
 		d.processExts, d.rejectExts, d.bypassExts, d.return400IfFileExtRejected, d.isGzip(),

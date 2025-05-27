@@ -62,7 +62,7 @@ func (e *Echo) Processing(partial bool, IcapHeader textproto.MIMEHeader) (int, i
 	if len(contentType) == 0 {
 		contentType = append(contentType, "")
 	}
-	fileExtension := e.generalFunc.GetMimeExtension(file, contentType[0], fileName)
+	fileExtension := e.generalFunc.GetMimeExtension(nil, contentType[0], fileName, file)
 	fileSize := fmt.Sprintf("%v kb", len(file)/1000)
 
 	//check if the file extension is a bypass extension
