@@ -495,7 +495,7 @@ func (f *GeneralFunc) InitSecure(VerifyServerCert bool) bool {
 }
 
 // GetMimeExtension returns the mime type extension of the data
-func (f *GeneralFunc) GetMimeExtension(data []byte, contentType string, filename string, file []byte) string {
+func (f *GeneralFunc) GetMimeExtension(data []byte, contentType string, filename string, allfile bool) string {
 	filename = strings.ToLower(filename)
 
 	logging.Logger.Info(utils.PrepareLogMsg(f.xICAPMetadata,
@@ -519,18 +519,18 @@ func (f *GeneralFunc) GetMimeExtension(data []byte, contentType string, filename
 		"application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
 	}
 
-	contentType = strings.Split(contentType, ";")[0]
-
-	// Handle .docx/.xlsx/.pptx disguised as zip
-	if (kind == filetype.Unknown || kind.Extension == "zip") && file != nil && len(file) > 0 {
-
-		kind, _ = filetype.Match(file)
-
+	if allfile {
 		logging.Logger.Debug(utils.PrepareLogMsg(f.xICAPMetadata,
 			"HTTP message body mime extension (from all file bytes) is "+kind.Extension))
-		if kind != filetype.Unknown {
-			return kind.Extension
-		}
+	}
+
+	contentType = strings.Split(contentType, ";")[0]
+	filenameArr := strings.Split(filename, ".")
+
+	// Handle .docx/.xlsx/.pptx disguised as zip or .doc as ppt .
+	if kind.Extension == "zip" && !allfile {
+		return "zip-partial"
+
 	}
 
 	if kind == filetype.Unknown {
@@ -540,7 +540,6 @@ func (f *GeneralFunc) GetMimeExtension(data []byte, contentType string, filename
 			return ext
 		}
 
-		filenameArr := strings.Split(filename, ".")
 		if len(filenameArr) > 1 {
 			logging.Logger.Debug(utils.PrepareLogMsg(f.xICAPMetadata,
 				"HTTP message body mime extension (from filename) is "+filenameArr[len(filenameArr)-1]))
@@ -551,9 +550,11 @@ func (f *GeneralFunc) GetMimeExtension(data []byte, contentType string, filename
 			"HTTP message body mime extension is unknown"))
 		return utils.Unknown
 	}
+	if !allfile {
+		logging.Logger.Debug(utils.PrepareLogMsg(f.xICAPMetadata,
+			"HTTP message body mime extension (from the first 262 bytes) is "+kind.Extension))
+	}
 
-	logging.Logger.Debug(utils.PrepareLogMsg(f.xICAPMetadata,
-		"HTTP message body mime extension (from the first 262 bytes) is "+kind.Extension))
 	return kind.Extension
 }
 

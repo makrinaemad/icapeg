@@ -51,7 +51,11 @@ func (h *Hashlocal) Processing(partial bool, IcapHeader textproto.MIMEHeader) (i
 		fileExtension = filepath.Ext(fileName)[1:]
 	} else {
 		// Determine the file extension using the header data
-		fileExtension = h.generalFunc.GetMimeExtension(filehead, contentType[0], fileName, file)
+		fileExtension = h.generalFunc.GetMimeExtension(filehead, contentType[0], fileName, false)
+		// If the file extension is "zip-partial", we need to send all file to handle .docx disguised as zip
+		if fileExtension == "zip-partial" {
+			fileExtension = h.generalFunc.GetMimeExtension(file, contentType[0], fileName, true)
+		}
 	}
 	h.FileHash, err = h.calculateFileHash(file)
 	if err != nil {
